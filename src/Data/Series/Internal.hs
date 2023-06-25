@@ -11,6 +11,8 @@ import Data.Vector (Vector)
 import Data.Time (UTCTime)
 
 -- | Represents a data point in a series. It has a time and a value.
+-- |
+-- | @since 0.1.0.0
 data DataPoint a
   = DataPoint
   { time :: !UTCTime
@@ -19,6 +21,8 @@ data DataPoint a
   deriving stock (Functor, Show, Eq)
 
 -- | A collection of data points. For any given time, we may or may not have a data point.
+-- |
+-- | @since 0.1.0.0
 -- The data points are sorted.
 newtype Series a
   = Series
