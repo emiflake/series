@@ -18,9 +18,6 @@
       url = "github:Liqwid-Labs/liqwid-nix/v2.9.2";
       inputs.nixpkgs-latest.follows = "nixpkgs-latest";
     };
-
-    liqwid-libs.url =
-      "github:Liqwid-Labs/liqwid-libs";
   };
 
   outputs = inputs@{ self, flake-parts, ... }:
@@ -45,14 +42,7 @@
             shell = { };
             hoogleImage.enable = false;
             enableBuildChecks = true;
-            extraHackageDeps = [
-              "${inputs.liqwid-libs}/plutarch-quickcheck"
-              "${inputs.liqwid-libs}/plutarch-context-builder"
-              "${inputs.liqwid-libs}/liqwid-plutarch-extra"
-              "${inputs.liqwid-libs}/liqwid-script-export"
-              "${inputs.liqwid-libs.inputs.ply}/ply-core"
-              "${inputs.liqwid-libs.inputs.ply}/ply-plutarch"
-            ];
+            extraHackageDeps = [];
           };
           ci.required = [ "all_onchain" ];
         };
