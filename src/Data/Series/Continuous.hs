@@ -1,13 +1,13 @@
-module Data.Series.Continuous (Continuous(..), sample, (@), sampleAndHold) where
+module Data.Series.Continuous (Continuous (..), sample, (@), sampleAndHold) where
 
-import Data.Series (Series, DataPoint(..))
+import Data.Series (DataPoint (..), Series)
 import Data.Series.Internal (binarySearch, latest)
-import Data.Time (UTCTime(..))
+import Data.Time (UTCTime (..))
 
--- | A continuous mapping from time to data.
---   For _every_ moment, we must have a data point.
-newtype Continuous a
-  = Continuous
+{- | A continuous mapping from time to data.
+  For _every_ moment, we must have a data point.
+-}
+newtype Continuous a = Continuous
   { runContinuous :: UTCTime -> a
   }
   deriving stock (Functor)

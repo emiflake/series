@@ -42,7 +42,7 @@
             shell = { };
             hoogleImage.enable = false;
             enableBuildChecks = true;
-            extraHackageDeps = [];
+            extraHackageDeps = [ ];
           };
           ci.required = [ "all_onchain" ];
         };
