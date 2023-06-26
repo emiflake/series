@@ -2,10 +2,11 @@ module Main (main) where
 
 import Prelude
 
-import qualified BinarySearch
+import BinarySearch qualified
 import GHC.IO.Encoding (setLocaleEncoding)
-import Test.Tasty (defaultMain, testGroup)
 import GHC.IO.Encoding.UTF8 (utf8)
+import Resample qualified
+import Test.Tasty (defaultMain, testGroup)
 
 main :: IO ()
 main = do
@@ -14,4 +15,6 @@ main = do
     testGroup
       "test suite"
       [ testGroup "Binary search properties" BinarySearch.props
+      , testGroup "Resample properties" Resample.props
+      , testGroup "Resample unit tests" Resample.unit
       ]

@@ -62,29 +62,30 @@ library
     Data.Series.Continuous
 
   other-modules:   Data.Series.Internal
-
   hs-source-dirs:  src
   build-depends:
 
 common test-deps
   build-depends:
-    , series
     , QuickCheck
     , quickcheck-instances
+    , series
     , tasty
+    , tasty-hunit
     , tasty-quickcheck
 
 common test-opts
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -O2
 
 test-suite series-test
-  import:           shared, test-deps, test-opts
-  type:             exitcode-stdio-1.0
-  main-is:          Main.hs
+  import:         shared, test-deps, test-opts
+  type:           exitcode-stdio-1.0
+  main-is:        Main.hs
   other-modules:
     BinarySearch
-    Data.Series.Internal
     Data.Series
-  hs-source-dirs:
-    src
-    test
+    Data.Series.Internal
+    Resample
+    Series
+
+  hs-source-dirs: src test

@@ -13,24 +13,26 @@ module Data.Series (
 )
 where
 
+import Data.Foldable (for_)
 import Data.List (sortOn)
+import Data.STRef (modifySTRef, readSTRef)
+import Data.STRef.Strict (newSTRef)
 import Data.Series.Internal (DataPoint (..), Series (..), binarySearch, exact, inclusiveSlice)
 import Data.Time (UTCTime)
 import Data.Vector qualified as Vector
 import qualified Data.Vector.Mutable as MVector
-import Data.STRef (newSTRef, readSTRef, modifySTRef)
-import Data.Foldable (for_)
 import Data.Vector (Vector)
 
-findLargestSmallerThan
-  :: forall a
-   . UTCTime
-  -> Series a
-  -> Maybe (DataPoint a)
+findLargestSmallerThan ::
+  forall a.
+  UTCTime ->
+  Series a ->
+  Maybe (DataPoint a)
 findLargestSmallerThan t (Series xs) =
-  lastMaybe $ Vector.filter
-    (\(DataPoint t0 _) -> t0 <= t)
-    xs
+  lastMaybe $
+    Vector.filter
+      (\(DataPoint t0 _) -> t0 <= t)
+      xs
   where
     lastMaybe :: forall b. Vector b -> Maybe b
     lastMaybe xs' | Vector.null xs' = Nothing
@@ -48,11 +50,12 @@ resampleSH ts xs =
     let writeAtFrom i ref v = do
           MVector.write nv i $ v
           modifySTRef ref succ
-    for_ [0..tLength - 1] $ \i -> do
+    for_ [0 .. tLength - 1] $ \i -> do
       ai <- readSTRef a
-      case findLargestSmallerThan (ts Vector.! i) xs of
+      let t = ts Vector.! i
+      case findLargestSmallerThan t xs of
         Nothing -> pure ()
-        Just t -> writeAtFrom ai a t
+        Just (DataPoint _ x) -> writeAtFrom ai a $ DataPoint t x
     ai <- readSTRef a
     pure $ MVector.slice 0 ai nv
 
