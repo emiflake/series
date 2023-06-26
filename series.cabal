@@ -62,7 +62,7 @@ library
     Data.Series
     Data.Series.Continuous
 
-  extra-modules:
+  other-modules:
     Data.Series.Internal
 
   hs-source-dirs:  src
