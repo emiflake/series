@@ -9,6 +9,7 @@ module Data.Series (
   size,
   singleton,
   merge,
+  resampleSH
 )
 where
 
@@ -18,8 +19,42 @@ import Data.Time (UTCTime)
 import Data.Vector qualified as Vector
 import qualified Data.Vector.Mutable as MVector
 import Data.STRef (newSTRef, readSTRef, modifySTRef)
-import Data.Traversable (for)
 import Data.Foldable (for_)
+import Data.Vector (Vector)
+
+findLargestSmallerThan
+  :: forall a
+   . UTCTime
+  -> Series a
+  -> Maybe (DataPoint a)
+findLargestSmallerThan t (Series xs) =
+  lastMaybe $ Vector.filter
+    (\(DataPoint t0 _) -> t0 <= t)
+    xs
+  where
+    lastMaybe :: forall b. Vector b -> Maybe b
+    lastMaybe xs' | Vector.null xs' = Nothing
+    lastMaybe xs' = Just $ Vector.last xs'
+
+-- iterate over ts, find largest x.time so that x.time < t
+-- set new[j] = x.time
+resampleSH :: forall a. Vector UTCTime -> Series a -> Series a
+resampleSH _ xs | isEmpty xs = emptySeries
+resampleSH ts xs =
+  Series $ Vector.create $ do
+    let tLength = Vector.length ts
+    nv <- MVector.new tLength
+    a <- newSTRef @Int 0
+    let writeAtFrom i ref v = do
+          MVector.write nv i $ v
+          modifySTRef ref succ
+    for_ [0..tLength - 1] $ \i -> do
+      ai <- readSTRef a
+      case findLargestSmallerThan (ts Vector.! i) xs of
+        Nothing -> pure ()
+        Just t -> writeAtFrom ai a t
+    ai <- readSTRef a
+    pure $ MVector.slice 0 ai nv
 
 -- | Series with no data points.
 emptySeries :: Series a
