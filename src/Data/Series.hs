@@ -8,17 +8,18 @@ module Data.Series (
   slice,
   size,
   singleton,
+  merge,
 )
 where
 
 import Data.List (sortOn)
-import Data.Maybe (fromJust)
-import Data.Series.Internal (DataPoint (..), Series (..), binarySearch, exact, inclusiveSlice, latest)
-import Data.These (These (That, These, This), these)
+import Data.Series.Internal (DataPoint (..), Series (..), binarySearch, exact, inclusiveSlice)
 import Data.Time (UTCTime)
-import Data.Vector (Vector)
 import Data.Vector qualified as Vector
-import Debug.Trace qualified as Debug
+import qualified Data.Vector.Mutable as MVector
+import Data.STRef (newSTRef, readSTRef, modifySTRef)
+import Data.Traversable (for)
+import Data.Foldable (for_)
 
 -- | Series with no data points.
 emptySeries :: Series a
@@ -41,13 +42,13 @@ isEmpty (Series dps) = Vector.null dps
 
 -- | Slice a series from one time to another. Inclusive. /O(log n)/.
 slice :: Show a => UTCTime -> UTCTime -> Series a -> Series a
-slice _ _ series | isEmpty series = emptySeries
-slice start end series@(Series dps) =
+slice _ _ s | isEmpty s = emptySeries
+slice start end s@(Series dps) =
   case sl of
     Nothing -> emptySeries
     Just (a, b) -> Series $ Vector.slice a ((b + 1) - a) dps
   where
-    sl = do a <- binarySearch start series; b <- binarySearch end series; inclusiveSlice a b
+    sl = do a <- binarySearch start s; b <- binarySearch end s; inclusiveSlice a b
 
 {- | Find the value at a specific time.
 
@@ -58,3 +59,33 @@ lookup t s = fmap ((.value) . snd) $ exact =<< binarySearch t s
 
 (!?) :: forall a. Series a -> UTCTime -> Maybe a
 (!?) = flip Data.Series.lookup
+
+-- | Merge two series, preserving temporal order.
+-- |
+-- | /O(n+m)/.
+merge :: Series a -> Series a -> Series a
+merge (Series dpsA) (Series dpsB) =
+  Series $ Vector.create $ do
+    let newLength = Vector.length dpsA + Vector.length dpsB
+    nv <- MVector.new newLength
+    a <- newSTRef @Int 0
+    b <- newSTRef @Int 0
+    let writeAtFrom i ref v = do
+          MVector.write nv i $ v
+          modifySTRef ref succ
+          
+    for_ [0..newLength - 1] $ \i -> do
+      ai <- readSTRef a
+      bi <- readSTRef b
+      case (dpsA Vector.!? ai, dpsB Vector.!? bi) of
+        (Just av, Nothing) -> writeAtFrom i a av
+        (Nothing, Just bv) -> writeAtFrom i b bv
+        (Just av, Just bv) ->
+          case compare av.time bv.time of
+            EQ -> writeAtFrom i a av
+            LT -> writeAtFrom i a av
+            GT -> writeAtFrom i b bv
+        (Nothing, Nothing) ->
+          -- FIXME(Emily, 26 June 2023): This should never happen, but let's be lenient for now.
+          pure ()
+    pure nv
