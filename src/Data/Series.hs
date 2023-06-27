@@ -17,10 +17,10 @@ module Data.Series (
 where
 
 import Data.List (sortOn)
-import Data.Series.Internal (DataPoint (..), Series (..), binarySearch, emptySeries, exact, inclusiveSlice, isEmpty, merge, resampleSAH, pairWiseZipWith)
+import Data.Series.Internal (DataPoint (..), Series (..), binarySearch, emptySeries, exact, inclusiveSlice, isEmpty, merge, pairWiseZipWith, resampleSAH)
+import Data.Series.TimeRange (TimeRange (TimeRange))
 import Data.Time (UTCTime)
 import Data.Vector qualified as Vector
-import Data.Series.TimeRange (TimeRange(TimeRange))
 
 -- | Create a series with only a single data point.
 singleton :: UTCTime -> a -> Series a

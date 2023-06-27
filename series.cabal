@@ -88,8 +88,8 @@ test-suite series-test
     Data.Series.Internal
     Data.Series.TimeRange
     Merge
-    Resample
     PairWiseZipWith
+    Resample
     Series
     Utils
 
