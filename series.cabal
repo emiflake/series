@@ -60,6 +60,7 @@ library
   exposed-modules:
     Data.Series
     Data.Series.Continuous
+    Data.Series.TimeRange
 
   other-modules:   Data.Series.Internal
   hs-source-dirs:  src
@@ -85,7 +86,10 @@ test-suite series-test
     BinarySearch
     Data.Series
     Data.Series.Internal
+    Data.Series.TimeRange
+    Merge
     Resample
     Series
+    Utils
 
   hs-source-dirs: src test

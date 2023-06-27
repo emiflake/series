@@ -26,8 +26,6 @@ newtype Series a = Series
   }
   deriving stock (Functor, Show, Eq)
 
-instance Semigroup a => Semigroup (Series a)
-
 binarySearch :: forall a. UTCTime -> Series a -> Maybe (SearchResult a)
 binarySearch _t (Series xs) | Vector.null xs = Nothing
 binarySearch t (Series xs) =

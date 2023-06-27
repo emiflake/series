@@ -1,8 +1,9 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 
-module Series (Series) where
+module Series (Series (Series)) where
 
-import Data.Series (DataPoint (DataPoint), Series, series)
+import Data.Series (DataPoint (DataPoint), series)
+import Data.Series.Internal (Series (Series))
 import Data.Time (UTCTime (UTCTime))
 import Data.Time.Calendar (addDays)
 import Data.Time.Clock.System (systemEpochDay)
