@@ -9,17 +9,62 @@ module Data.Series (
   size,
   singleton,
   merge,
+  resampleSAH,
 )
 where
 
+import Data.Foldable (for_)
 import Data.List (sortOn)
+import Data.STRef (modifySTRef, readSTRef)
+import Data.STRef.Strict (newSTRef)
 import Data.Series.Internal (DataPoint (..), Series (..), binarySearch, exact, inclusiveSlice)
 import Data.Time (UTCTime)
+import Data.Vector (Vector)
 import Data.Vector qualified as Vector
-import qualified Data.Vector.Mutable as MVector
-import Data.STRef (newSTRef, readSTRef, modifySTRef)
-import Data.Traversable (for)
-import Data.Foldable (for_)
+import Data.Vector.Mutable qualified as MVector
+
+findLargestSmallerThan ::
+  forall a.
+  UTCTime ->
+  Series a ->
+  Maybe (DataPoint a)
+findLargestSmallerThan t (Series xs) =
+  lastMaybe $
+    Vector.filter
+      (\(DataPoint t0 _) -> t0 <= t)
+      xs
+  where
+    lastMaybe :: forall b. Vector b -> Maybe b
+    lastMaybe xs' | Vector.null xs' = Nothing
+    lastMaybe xs' = Just $ Vector.last xs'
+
+{- | Create a new series with the times in the given vector, at each of the
+     times in the vector place the last registered value in the given series
+     before that time.
+
+     If a given time from the vector is before the first time in the series,
+     drop it.
+
+     Passing an empty vector or series will always result in an empty series.
+-}
+resampleSAH :: forall a. Vector UTCTime -> Series a -> Series a
+resampleSAH _ xs | isEmpty xs = emptySeries
+resampleSAH ts xs =
+  Series $ Vector.create $ do
+    let tLength = Vector.length ts
+    nv <- MVector.new tLength
+    a <- newSTRef @Int 0
+    let writeAtFrom i ref v = do
+          MVector.write nv i $ v
+          modifySTRef ref succ
+    for_ [0 .. tLength - 1] $ \i -> do
+      ai <- readSTRef a
+      let t = ts Vector.! i
+      case findLargestSmallerThan t xs of
+        Nothing -> pure ()
+        Just (DataPoint _ x) -> writeAtFrom ai a $ DataPoint t x
+    ai <- readSTRef a
+    pure $ MVector.slice 0 ai nv
 
 -- | Series with no data points.
 emptySeries :: Series a
@@ -60,9 +105,10 @@ lookup t s = fmap ((.value) . snd) $ exact =<< binarySearch t s
 (!?) :: forall a. Series a -> UTCTime -> Maybe a
 (!?) = flip Data.Series.lookup
 
--- | Merge two series, preserving temporal order.
--- |
--- | /O(n+m)/.
+{- | Merge two series, preserving temporal order.
+
+     /O(n+m)/.
+-}
 merge :: Series a -> Series a -> Series a
 merge (Series dpsA) (Series dpsB) =
   Series $ Vector.create $ do
@@ -73,8 +119,8 @@ merge (Series dpsA) (Series dpsB) =
     let writeAtFrom i ref v = do
           MVector.write nv i $ v
           modifySTRef ref succ
-          
-    for_ [0..newLength - 1] $ \i -> do
+
+    for_ [0 .. newLength - 1] $ \i -> do
       ai <- readSTRef a
       bi <- readSTRef b
       case (dpsA Vector.!? ai, dpsB Vector.!? bi) of
