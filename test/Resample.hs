@@ -1,23 +1,16 @@
 module Resample (props, unit) where
 
+import Control.Arrow (first)
 import Data.Series (emptySeries, resampleSAH, series)
 import Data.Time (UTCTime (..))
-import Data.Time.Calendar (Day (ModifiedJulianDay))
-import Data.Time.Clock (secondsToDiffTime)
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Series (Series)
 import Test.QuickCheck (Property)
-import Test.Tasty (TestTree, adjustOption)
+import Test.Tasty (TestTree)
 import Test.Tasty.HUnit (testCase, (@?=))
-import Test.Tasty.QuickCheck (QuickCheckMaxSize (QuickCheckMaxSize), QuickCheckTests (QuickCheckTests), property, testProperty)
-import Control.Arrow (first)
-
-mkUTCTime :: Integer -> UTCTime
-mkUTCTime x =
-  UTCTime
-    (ModifiedJulianDay $ x `div` 86401)
-    (secondsToDiffTime $ x `mod` 86401)
+import Test.Tasty.QuickCheck (property, testProperty)
+import Utils (mkUTCTime)
 
 ts0 :: Vector UTCTime
 ts0 = Vector.fromList $ mkUTCTime <$> [1, 4, 6]
@@ -26,7 +19,7 @@ xs0 :: Series Char
 xs0 = series $ map (first mkUTCTime) [(0, 'a'), (3, 'b'), (5, 'c'), (7, 'd')]
 
 ys0 :: Series Char
-ys0 = series $ map (first mkUTCTime)  [(1, 'a'), (4, 'b'), (6, 'c')]
+ys0 = series $ map (first mkUTCTime) [(1, 'a'), (4, 'b'), (6, 'c')]
 
 ts1 :: Vector UTCTime
 ts1 = Vector.fromList $ mkUTCTime <$> [1, 4, 8]

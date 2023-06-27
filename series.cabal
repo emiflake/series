@@ -85,7 +85,9 @@ test-suite series-test
     BinarySearch
     Data.Series
     Data.Series.Internal
+    Merge
     Resample
     Series
+    Utils
 
   hs-source-dirs: src test

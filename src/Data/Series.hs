@@ -10,6 +10,8 @@ module Data.Series (
   singleton,
   merge,
   resampleSAH,
+  bounds,
+  isEmpty,
 )
 where
 
@@ -135,3 +137,7 @@ merge (Series dpsA) (Series dpsB) =
           -- FIXME(Emily, 26 June 2023): This should never happen, but let's be lenient for now.
           pure ()
     pure nv
+
+bounds :: forall a. Series a -> Maybe (UTCTime, UTCTime)
+bounds (Series s) | Vector.null s = Nothing
+bounds (Series s) = Just ((Vector.head s).time, (s Vector.! (Vector.length s - 1)).time)
