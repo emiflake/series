@@ -8,6 +8,11 @@ import Data.Time.Calendar (addDays)
 import Data.Time.Clock.System (systemEpochDay)
 import Test.QuickCheck (Arbitrary (arbitrary))
 import Test.Tasty.QuickCheck (listOf)
+import Data.Vector (Vector)
+import qualified Data.Vector as Vector
+
+instance Arbitrary a => Arbitrary (Vector a) where
+  arbitrary = Vector.fromList <$> arbitrary
 
 instance Arbitrary UTCTime where
   arbitrary =

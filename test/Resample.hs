@@ -1,13 +1,16 @@
 module Resample (props, unit) where
 
-import Data.Series (Series, emptySeries, resampleSH, series)
+import Data.Series (emptySeries, resampleSH, series)
 import Data.Time (UTCTime (..))
 import Data.Time.Calendar (Day (ModifiedJulianDay))
 import Data.Time.Clock (secondsToDiffTime)
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
-import Test.Tasty (TestTree)
+import Test.Tasty (TestTree, adjustOption)
 import Test.Tasty.HUnit (testCase, (@?=))
+import Test.QuickCheck (Property)
+import Test.Tasty.QuickCheck (property, testProperty, QuickCheckMaxSize (QuickCheckMaxSize), QuickCheckTests (QuickCheckTests))
+import Series (Series)
 
 mkUTCTime :: Integer -> UTCTime
 mkUTCTime x =
@@ -57,11 +60,23 @@ unit =
   , testCase "Resample unit 2" $ resampleSH ts2 xs2 @?= ys2
   , testCase "Resample unit 3" $ resampleSH ts2 xs3 @?= ys2
   , testCase "Resample unit 4" $ resampleSH ts4 xs3 @?= xs3
-  , testCase "Resample unit 5" $ resampleSH Vector.empty xs3 @?= emptySeries
-  , testCase "Resample unit 6" $ resampleSH ts4 emptySeries @?= emptySeries @Int
-  , testCase "Resample unit 7" $ resampleSH Vector.empty emptySeries @?= emptySeries @Int
+  , testCase "Resample unit 5" $ resampleSH Vector.empty emptySeries @?= emptySeries @Int
   ]
 
 props :: [TestTree]
 props =
-  []
+  [ adjustOption (\_ -> QuickCheckTests 1000) $ adjustOption (\_ -> QuickCheckMaxSize 1000) $ testProperty "resampleEmptyValidTs" resampleEmptyValidTsProperty
+  , adjustOption (\_ -> QuickCheckTests 1000) $ adjustOption (\_ -> QuickCheckMaxSize 1000) $ testProperty "resampleEmptyValidXs" resampleEmptyValidXsProperty
+  ]
+
+prop_resampleEmptyValidTs :: Series Int -> Bool
+prop_resampleEmptyValidTs xs = resampleSH Vector.empty xs == emptySeries
+
+resampleEmptyValidTsProperty :: Property
+resampleEmptyValidTsProperty = property prop_resampleEmptyValidTs
+
+prop_resampleEmptyValidXs :: Vector UTCTime -> Bool
+prop_resampleEmptyValidXs ts = resampleSH ts emptySeries == emptySeries @Int
+
+resampleEmptyValidXsProperty :: Property
+resampleEmptyValidXsProperty = property prop_resampleEmptyValidXs
