@@ -9,7 +9,7 @@ module Data.Series (
   size,
   singleton,
   merge,
-  resampleSH
+  resampleSAH,
 )
 where
 
@@ -19,9 +19,9 @@ import Data.STRef (modifySTRef, readSTRef)
 import Data.STRef.Strict (newSTRef)
 import Data.Series.Internal (DataPoint (..), Series (..), binarySearch, exact, inclusiveSlice)
 import Data.Time (UTCTime)
-import Data.Vector qualified as Vector
-import qualified Data.Vector.Mutable as MVector
 import Data.Vector (Vector)
+import Data.Vector qualified as Vector
+import Data.Vector.Mutable qualified as MVector
 
 findLargestSmallerThan ::
   forall a.
@@ -40,9 +40,9 @@ findLargestSmallerThan t (Series xs) =
 
 -- iterate over ts, find largest x.time so that x.time < t
 -- set new[j] = x.time
-resampleSH :: forall a. Vector UTCTime -> Series a -> Series a
-resampleSH _ xs | isEmpty xs = emptySeries
-resampleSH ts xs =
+resampleSAH :: forall a. Vector UTCTime -> Series a -> Series a
+resampleSAH _ xs | isEmpty xs = emptySeries
+resampleSAH ts xs =
   Series $ Vector.create $ do
     let tLength = Vector.length ts
     nv <- MVector.new tLength
@@ -98,9 +98,10 @@ lookup t s = fmap ((.value) . snd) $ exact =<< binarySearch t s
 (!?) :: forall a. Series a -> UTCTime -> Maybe a
 (!?) = flip Data.Series.lookup
 
--- | Merge two series, preserving temporal order.
--- |
--- | /O(n+m)/.
+{- | Merge two series, preserving temporal order.
+|
+| /O(n+m)/.
+-}
 merge :: Series a -> Series a -> Series a
 merge (Series dpsA) (Series dpsB) =
   Series $ Vector.create $ do
@@ -111,8 +112,8 @@ merge (Series dpsA) (Series dpsB) =
     let writeAtFrom i ref v = do
           MVector.write nv i $ v
           modifySTRef ref succ
-          
-    for_ [0..newLength - 1] $ \i -> do
+
+    for_ [0 .. newLength - 1] $ \i -> do
       ai <- readSTRef a
       bi <- readSTRef b
       case (dpsA Vector.!? ai, dpsB Vector.!? bi) of
