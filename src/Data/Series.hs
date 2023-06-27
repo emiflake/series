@@ -38,8 +38,15 @@ findLargestSmallerThan t (Series xs) =
     lastMaybe xs' | Vector.null xs' = Nothing
     lastMaybe xs' = Just $ Vector.last xs'
 
--- iterate over ts, find largest x.time so that x.time < t
--- set new[j] = x.time
+{- | Create a new series with the times in the given vector, at each of the
+     times in the vector place the last registered value in the given series
+     before that time.
+
+     If a given time from the vector is before the first time in the series,
+     drop it.
+
+     Passing an empty vector or series will always result in an empty series.
+-}
 resampleSAH :: forall a. Vector UTCTime -> Series a -> Series a
 resampleSAH _ xs | isEmpty xs = emptySeries
 resampleSAH ts xs =
@@ -99,8 +106,8 @@ lookup t s = fmap ((.value) . snd) $ exact =<< binarySearch t s
 (!?) = flip Data.Series.lookup
 
 {- | Merge two series, preserving temporal order.
-|
-| /O(n+m)/.
+
+     /O(n+m)/.
 -}
 merge :: Series a -> Series a -> Series a
 merge (Series dpsA) (Series dpsB) =

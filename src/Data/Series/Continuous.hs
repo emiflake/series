@@ -5,7 +5,7 @@ import Data.Series.Internal (binarySearch, latest)
 import Data.Time (UTCTime (..))
 
 {- | A continuous mapping from time to data.
-  For _every_ moment, we must have a data point.
+     For _every_ moment, we must have a data point.
 -}
 newtype Continuous a = Continuous
   { runContinuous :: UTCTime -> a

@@ -2,7 +2,7 @@
 -- Low level API that may or may not end up being exposed.
 
 {- | Perform binary search on a 'Series' for a time.
-This is a low-level operation.
+     This is a low-level operation.
 -}
 module Data.Series.Internal (binarySearch, linearSearch, SearchResult (..), inclusiveSlice, latest, Series (..), DataPoint (..), exact) where
 
@@ -19,7 +19,7 @@ data DataPoint a = DataPoint
   deriving stock (Functor, Show, Eq)
 
 {- | A collection of data points. For any given time, we may or may not have a data point.
-The data points are sorted.
+     The data points are sorted.
 -}
 newtype Series a = Series
   { getSeries :: Vector (DataPoint a)
@@ -109,7 +109,7 @@ inclusiveIndexLB (Nearest t) =
     That (i, _) -> Just i
 
 {- | Create the bounds based on two search results, giving a new slice.
-| If the slice contains no elements, return Nothing.
+     If the slice contains no elements, return Nothing.
 -}
 inclusiveSlice :: SearchResult a -> SearchResult a -> Maybe (Int, Int)
 inclusiveSlice lb ub =

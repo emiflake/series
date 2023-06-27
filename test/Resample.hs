@@ -11,6 +11,7 @@ import Test.QuickCheck (Property)
 import Test.Tasty (TestTree, adjustOption)
 import Test.Tasty.HUnit (testCase, (@?=))
 import Test.Tasty.QuickCheck (QuickCheckMaxSize (QuickCheckMaxSize), QuickCheckTests (QuickCheckTests), property, testProperty)
+import Control.Arrow (first)
 
 mkUTCTime :: Integer -> UTCTime
 mkUTCTime x =
@@ -18,35 +19,32 @@ mkUTCTime x =
     (ModifiedJulianDay $ x `div` 86401)
     (secondsToDiffTime $ x `mod` 86401)
 
-mapFst :: Functor f => (a -> c) -> f (a, b) -> f (c, b)
-mapFst f = (<$>) (\(x, y) -> (f x, y))
-
 ts0 :: Vector UTCTime
 ts0 = Vector.fromList $ mkUTCTime <$> [1, 4, 6]
 
 xs0 :: Series Char
-xs0 = series $ mapFst mkUTCTime [(0, 'a'), (3, 'b'), (5, 'c'), (7, 'd')]
+xs0 = series $ map (first mkUTCTime) [(0, 'a'), (3, 'b'), (5, 'c'), (7, 'd')]
 
 ys0 :: Series Char
-ys0 = series $ mapFst mkUTCTime [(1, 'a'), (4, 'b'), (6, 'c')]
+ys0 = series $ map (first mkUTCTime)  [(1, 'a'), (4, 'b'), (6, 'c')]
 
 ts1 :: Vector UTCTime
 ts1 = Vector.fromList $ mkUTCTime <$> [1, 4, 8]
 
 ys1 :: Series Char
-ys1 = series $ mapFst mkUTCTime [(1, 'a'), (4, 'b'), (8, 'd')]
+ys1 = series $ map (first mkUTCTime) [(1, 'a'), (4, 'b'), (8, 'd')]
 
 ts2 :: Vector UTCTime
 ts2 = Vector.fromList $ mkUTCTime <$> [0, 4, 6]
 
 xs2 :: Series Char
-xs2 = series $ mapFst mkUTCTime [(1, 'a'), (3, 'b'), (5, 'c'), (7, 'd')]
+xs2 = series $ map (first mkUTCTime) [(1, 'a'), (3, 'b'), (5, 'c'), (7, 'd')]
 
 ys2 :: Series Char
-ys2 = series $ mapFst mkUTCTime [(4, 'b'), (6, 'c')]
+ys2 = series $ map (first mkUTCTime) [(4, 'b'), (6, 'c')]
 
 xs3 :: Series Char
-xs3 = series $ mapFst mkUTCTime [(1, 'a'), (3, 'b'), (5, 'c')]
+xs3 = series $ map (first mkUTCTime) [(1, 'a'), (3, 'b'), (5, 'c')]
 
 ts4 :: Vector UTCTime
 ts4 = Vector.fromList $ mkUTCTime <$> [1, 3, 5]
@@ -65,8 +63,8 @@ unit =
 
 props :: [TestTree]
 props =
-  [ adjustOption (\_ -> QuickCheckTests 1000) $ adjustOption (\_ -> QuickCheckMaxSize 1000) $ testProperty "resampleEmptyValidTs" resampleEmptyValidTsProperty
-  , adjustOption (\_ -> QuickCheckTests 1000) $ adjustOption (\_ -> QuickCheckMaxSize 1000) $ testProperty "resampleEmptyValidXs" resampleEmptyValidXsProperty
+  [ testProperty "resampleEmptyValidTs" resampleEmptyValidTsProperty
+  , testProperty "resampleEmptyValidXs" resampleEmptyValidXsProperty
   ]
 
 prop_resampleEmptyValidTs :: Series Int -> Bool
