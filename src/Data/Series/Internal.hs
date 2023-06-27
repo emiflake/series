@@ -214,8 +214,27 @@ lookup t s = fmap ((.value) . snd) $ exact =<< binarySearch t s
 unsafeLookup :: UTCTime -> Series a -> a
 unsafeLookup t s = fromJust $ lookup t s
 
-pairWiseZipWith :: forall a b c. (a -> b -> c) -> Series a -> Series b -> Series c
-pairWiseZipWith f sa sb = Series $ fmap (\dp -> dp {value = f (unsafeLookup dp.time resampledSeriesA) dp.value}) $ deconstr resampledSeriesB
+sortedVectorNub :: Eq a => Vector a -> Vector a
+sortedVectorNub v =
+  Vector.create $ do
+    let len = length v
+    nv <- MVector.new len
+    l <- newSTRef @Int 0
+    let writeAtFrom i ref v' = do
+          MVector.write nv i v'
+          modifySTRef ref succ
+    for_ [0 .. len - 1] $ \i -> do
+      let x = v Vector.! i
+      l' <- readSTRef l
+      if i < len - 1 && x == v Vector.! (i + 1) then
+        pure ()
+      else
+        writeAtFrom l' l x
+    l' <- readSTRef l
+    pure $ MVector.slice 0 l' nv
+
+pairWiseZipWith :: forall a b c. Eq c => (a -> b -> c) -> Series a -> Series b -> Series c
+pairWiseZipWith f sa sb = Series $ sortedVectorNub $ fmap (\dp -> dp {value = f (unsafeLookup dp.time resampledSeriesA) dp.value}) $ deconstr resampledSeriesB
   where
     resampledSeriesA :: Series a
     resampledSeriesA = applySAH (extractTimes sb) sa

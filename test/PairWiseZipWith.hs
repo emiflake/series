@@ -27,7 +27,6 @@ ys = series
 zs :: Series Rational
 zs = series
       [ (mkUTCTime 0, 100_000_000)
-      , (mkUTCTime 0, 100_000_000)
       , (mkUTCTime 2, 75_000_000)
       , (mkUTCTime 4, 90_000_000)
       , (mkUTCTime 10, 105_000_000)
