@@ -20,6 +20,7 @@ import Data.List (sortOn)
 import Data.STRef (modifySTRef, readSTRef)
 import Data.STRef.Strict (newSTRef)
 import Data.Series.Internal (DataPoint (..), Series (..), binarySearch, exact, inclusiveSlice)
+import Data.Series.TimeRange (TimeRange (TimeRange))
 import Data.Time (UTCTime)
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
@@ -87,7 +88,10 @@ series = Series . Vector.fromList . sortOn (.time) . fmap (uncurry DataPoint)
 isEmpty :: Series a -> Bool
 isEmpty (Series dps) = Vector.null dps
 
--- | Slice a series from one time to another. Inclusive. /O(log n)/.
+{- | Slice a series from one time to another. Inclusive. /O(log n)/.
+
+     /O(log n)/.
+-}
 slice :: Show a => UTCTime -> UTCTime -> Series a -> Series a
 slice _ _ s | isEmpty s = emptySeries
 slice start end s@(Series dps) =
@@ -104,6 +108,10 @@ slice start end s@(Series dps) =
 lookup :: UTCTime -> Series a -> Maybe a
 lookup t s = fmap ((.value) . snd) $ exact =<< binarySearch t s
 
+{- | Infix version of 'Data.Series.lookup'.
+
+     /O(log n)/.
+-}
 (!?) :: forall a. Series a -> UTCTime -> Maybe a
 (!?) = flip Data.Series.lookup
 
@@ -138,6 +146,10 @@ merge (Series dpsA) (Series dpsB) =
           pure ()
     pure nv
 
-bounds :: forall a. Series a -> Maybe (UTCTime, UTCTime)
+{- | Compute the bounds of a 'Series'.
+
+     /O(1)/.
+-}
+bounds :: forall a. Series a -> Maybe TimeRange
 bounds (Series s) | Vector.null s = Nothing
-bounds (Series s) = Just ((Vector.head s).time, (s Vector.! (Vector.length s - 1)).time)
+bounds (Series s) = Just $ TimeRange (Vector.head s).time (Vector.last s).time
