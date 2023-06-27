@@ -9,6 +9,7 @@ import Merge qualified
 import Resample qualified
 import Test.Tasty (adjustOption, defaultMain, testGroup)
 import Test.Tasty.QuickCheck (QuickCheckMaxSize (QuickCheckMaxSize), QuickCheckTests (QuickCheckTests))
+import PairWiseZipWith qualified
 
 main :: IO ()
 main = do
@@ -23,4 +24,6 @@ main = do
           , testGroup "Resample unit tests" Resample.unit
           , testGroup "Merge properties" Merge.props
           , testGroup "Merge unit tests" Merge.unit
+          , testGroup "Pair-wise zip with properties tests" PairWiseZipWith.props
+          , testGroup "Pair-wise zip with unit tests" PairWiseZipWith.unit
           ]
