@@ -15,7 +15,9 @@ props =
   [ testProperty "size (nub xs) <= size xs" (prop_lengthNubLess @Int)
   , testProperty "nub makes times unique" (prop_nubMakesUnique @Int)
   , testProperty "nubWith on head is nub" (prop_nubWithHeadIsNub @Int)
-  , testProperty "nubWith compares to declarative implementation" (prop_nubWithDeclarative @Int)
+  , testProperty
+      "nubWith compares to declarative implementation"
+      (prop_nubWithDeclarative @Int)
   ]
 
 prop_lengthNubLess :: forall a. Series a -> Bool
@@ -37,5 +39,12 @@ prop_nubWithDeclarative xs@(Series dps) =
     declarative =
       Vector.toList dps
         & List.groupBy ((==) `on` (.time))
-        & fmap ((\(DataPoint t v) -> (t, v)) . List.maximumBy (comparing (.value)))
+        & fmap
+          ( ( \(DataPoint t v) ->
+                (t, v)
+            )
+              . List.maximumBy
+                ( comparing (.value)
+                )
+          )
         & Series.series

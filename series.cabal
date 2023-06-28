@@ -59,7 +59,6 @@ library
   import:          shared
   exposed-modules:
     Data.Series
-    Data.Series.Continuous
     Data.Series.TimeRange
 
   other-modules:   Data.Series.Internal

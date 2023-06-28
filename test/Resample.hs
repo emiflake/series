@@ -51,7 +51,9 @@ unit =
   , testCase "Resample unit 2" $ resampleSAH ts2 xs2 @?= ys2
   , testCase "Resample unit 3" $ resampleSAH ts2 xs3 @?= ys2
   , testCase "Resample unit 4" $ resampleSAH ts4 xs3 @?= xs3
-  , testCase "Resample unit 5" $ resampleSAH Vector.empty emptySeries @?= emptySeries @Int
+  , testCase
+      "Resample unit 5"
+      $ resampleSAH Vector.empty emptySeries @?= emptySeries @Int
   ]
 
 props :: [TestTree]
