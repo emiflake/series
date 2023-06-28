@@ -12,15 +12,22 @@ module Data.Series (
   resampleSAH,
   bounds,
   isEmpty,
-  pairWiseZipWith,
+  pointwiseZipWith
 )
 where
 
 import Data.List (sortOn)
-import Data.Series.Internal (DataPoint (..), Series (..), binarySearch, emptySeries, exact, inclusiveSlice, isEmpty, merge, pairWiseZipWith, resampleSAH)
+import Data.Series.Internal (DataPoint (..), Series (..), binarySearch, emptySeries, exact, inclusiveSlice, isEmpty)
 import Data.Series.TimeRange (TimeRange (TimeRange))
 import Data.Time (UTCTime)
 import Data.Vector qualified as Vector
+import Data.Vector (Vector)
+import qualified Data.Vector.Mutable as MVector
+import Data.Maybe (fromJust)
+import Data.STRef (newSTRef)
+import Data.STRef.Strict (modifySTRef)
+import Data.Foldable (for_)
+import Data.STRef (readSTRef)
 
 -- | Create a series with only a single data point.
 singleton :: UTCTime -> a -> Series a
@@ -64,3 +71,122 @@ lookup t s = fmap ((.value) . snd) $ exact =<< binarySearch t s
 bounds :: forall a. Series a -> Maybe TimeRange
 bounds (Series s) | Vector.null s = Nothing
 bounds (Series s) = Just $ TimeRange (Vector.head s).time (Vector.last s).time
+
+findLargestSmallerThan ::
+  forall a.
+  UTCTime ->
+  Series a ->
+  Maybe (DataPoint a)
+findLargestSmallerThan t (Series xs) =
+  lastMaybe $
+    Vector.filter
+      (\(DataPoint t0 _) -> t0 <= t)
+      xs
+  where
+    lastMaybe :: forall b. Vector b -> Maybe b
+    lastMaybe xs' | Vector.null xs' = Nothing
+    lastMaybe xs' = Just $ Vector.last xs'
+
+{- | Merge two series, preserving temporal order.
+
+     /O(n+m)/.
+-}
+merge :: Series a -> Series a -> Series a
+merge (Series dpsA) (Series dpsB) =
+  Series $ Vector.create $ do
+    let newLength = Vector.length dpsA + Vector.length dpsB
+    nv <- MVector.new newLength
+    a <- newSTRef @Int 0
+    b <- newSTRef @Int 0
+    let writeAtFrom i ref v = do
+          MVector.write nv i $ v
+          modifySTRef ref succ
+
+    for_ [0 .. newLength - 1] $ \i -> do
+      ai <- readSTRef a
+      bi <- readSTRef b
+      case (dpsA Vector.!? ai, dpsB Vector.!? bi) of
+        (Just av, Nothing) -> writeAtFrom i a av
+        (Nothing, Just bv) -> writeAtFrom i b bv
+        (Just av, Just bv) ->
+          case compare av.time bv.time of
+            EQ -> writeAtFrom i a av
+            LT -> writeAtFrom i a av
+            GT -> writeAtFrom i b bv
+        (Nothing, Nothing) ->
+          -- FIXME(Emily, 26 June 2023): This should never happen, but let's be lenient for now.
+          pure ()
+    pure nv
+
+{- | Create a new series with the times in the given vector, at each of the
+     times in the vector place the last registered value in the given series
+     before that time.
+
+     If a given time from the vector is before the first time in the series,
+     drop it.
+
+     Passing an empty vector or series will always result in an empty series.
+-}
+resampleSAH :: forall a. Vector UTCTime -> Series a -> Series a
+resampleSAH _ xs | isEmpty xs = emptySeries
+resampleSAH ts xs =
+  Series $ Vector.create $ do
+    let tLength = Vector.length ts
+    nv <- MVector.new tLength
+    a <- newSTRef @Int 0
+    let writeAtFrom i ref v = do
+          MVector.write nv i $ v
+          modifySTRef ref succ
+    for_ [0 .. tLength - 1] $ \i -> do
+      ai <- readSTRef a
+      let t = ts Vector.! i
+      case findLargestSmallerThan t xs of
+        Nothing -> pure ()
+        Just (DataPoint _ x) -> writeAtFrom ai a $ DataPoint t x
+    ai <- readSTRef a
+    pure $ MVector.slice 0 ai nv
+
+sortedVectorNub :: forall a. Ord a => Vector (DataPoint a) -> Vector (DataPoint a)
+sortedVectorNub v =
+  Vector.ifilter
+    (\i dp -> not $ smallerThanPrevious i dp || smallerThanNext i dp)
+    v
+  where
+    len :: Int
+    len = length v
+
+    previous :: Int -> DataPoint a
+    previous i = v Vector.! (i - 1)
+
+    next :: Int -> DataPoint a
+    next i = v Vector.! (i + 1)
+
+    smallerThanNext :: Ord a => Int -> DataPoint a -> Bool
+    smallerThanNext i dp =
+      i < len - 1
+        && dp.time == (next i).time
+        && dp.value <= (next i).value
+
+    smallerThanPrevious :: Ord a => Int -> DataPoint a -> Bool
+    smallerThanPrevious i dp =
+      i > 0
+        && dp.time == (previous i).time
+        && dp.value < (previous i).value
+
+pointwiseZipWith :: forall a b c. Ord c => (a -> b -> c) -> Series a -> Series b -> Series c
+pointwiseZipWith f sa sb = Series $ sortedVectorNub $ fmap (\dp -> dp {value = f (fromJust $ Data.Series.lookup dp.time resampledSeriesA) dp.value}) $ deconstr resampledSeriesB
+  where
+    resampledSeriesA :: Series a
+    resampledSeriesA = applySAH (times sb) sa
+
+    resampledSeriesB :: Series b
+    resampledSeriesB = applySAH (times sa) sb
+
+    deconstr :: forall d. Series d -> Vector (DataPoint d)
+    deconstr (Series s) = s
+
+times :: forall a. Series a -> Vector UTCTime
+times (Series s) = (.time) <$> s
+
+applySAH :: forall a. Vector UTCTime -> Series a -> Series a
+applySAH ts s = merge s $ resampleSAH ts s

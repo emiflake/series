@@ -1,6 +1,6 @@
-module PairWiseZipWith (unit, props) where
+module PointwiseZipWith (unit, props) where
 
-import Data.Series (Series, pairWiseZipWith, series)
+import Data.Series (Series, pointwiseZipWith, series)
 import Test.Tasty (TestTree)
 import Test.Tasty.HUnit (testCase, (@?=))
 import Utils (mkUTCTime)
@@ -41,7 +41,7 @@ zs =
 
 unit :: [TestTree]
 unit =
-  [ testCase "Pair-wise zip with unit 0" $ pairWiseZipWith (*) xs ys @?= zs
+  [ testCase "Pointwise zip with unit 0" $ pointwiseZipWith (*) xs ys @?= zs
   ]
 
 props :: [TestTree]
