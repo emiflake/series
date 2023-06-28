@@ -92,5 +92,6 @@ test-suite series-test
     Resample
     Series
     Utils
+    Nub
 
   hs-source-dirs: src test

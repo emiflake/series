@@ -1,6 +1,6 @@
 module Data.Series (
   DataPoint (..),
-  Series,
+  Series (getSeries),
   emptySeries,
   series,
   Data.Series.lookup,
@@ -12,22 +12,25 @@ module Data.Series (
   resampleSAH,
   bounds,
   isEmpty,
-  pointwiseZipWith
+  pointwiseZipWith,
+  nub,
+  nubWith,
+  values,
+  times,
 )
 where
 
+import Data.Foldable (for_)
 import Data.List (sortOn)
+import Data.Maybe (fromJust)
+import Data.STRef (newSTRef, readSTRef)
+import Data.STRef.Strict (modifySTRef)
 import Data.Series.Internal (DataPoint (..), Series (..), binarySearch, emptySeries, exact, inclusiveSlice, isEmpty)
 import Data.Series.TimeRange (TimeRange (TimeRange))
 import Data.Time (UTCTime)
-import Data.Vector qualified as Vector
 import Data.Vector (Vector)
-import qualified Data.Vector.Mutable as MVector
-import Data.Maybe (fromJust)
-import Data.STRef (newSTRef)
-import Data.STRef.Strict (modifySTRef)
-import Data.Foldable (for_)
-import Data.STRef (readSTRef)
+import Data.Vector qualified as Vector
+import Data.Vector.Mutable qualified as MVector
 
 -- | Create a series with only a single data point.
 singleton :: UTCTime -> a -> Series a
@@ -173,6 +176,7 @@ sortedVectorNub v =
         && dp.time == (previous i).time
         && dp.value < (previous i).value
 
+-- | Merge two series, applying the latest value from each with the other.
 pointwiseZipWith :: forall a b c. Ord c => (a -> b -> c) -> Series a -> Series b -> Series c
 pointwiseZipWith f sa sb = Series $ sortedVectorNub $ fmap (\dp -> dp {value = f (fromJust $ Data.Series.lookup dp.time resampledSeriesA) dp.value}) $ deconstr resampledSeriesB
   where
@@ -185,8 +189,38 @@ pointwiseZipWith f sa sb = Series $ sortedVectorNub $ fmap (\dp -> dp {value = f
     deconstr :: forall d. Series d -> Vector (DataPoint d)
     deconstr (Series s) = s
 
+-- | Extract the times vector from the series.
 times :: forall a. Series a -> Vector UTCTime
-times (Series s) = (.time) <$> s
+times (Series s) = Vector.map (.time) s
 
+-- | Extract only the values from the 'Series'.
+values :: Series a -> Vector a
+values (Series s) = Vector.map (.value) s
+
+-- | Add additional data points based on existing data in the 'Series'.
 applySAH :: forall a. Vector UTCTime -> Series a -> Series a
 applySAH ts s = merge s $ resampleSAH ts s
+
+{- | Remove duplicates without care for preserving some order of elements.
+
+     /O(n)/.
+-}
+nub :: Series a -> Series a
+nub (Series dps) = Series $ Vector.ifilter (\i dp -> maybe True ((dp.time /=) . (.time)) $ dps Vector.!? (i - 1)) dps
+
+-- | Remove duplicates from a series, exposing the choice for preserving element to the caller.
+nubWith :: forall a. (Vector a -> a) -> Series a -> Series a
+nubWith f (Series dps) =
+  Series $ Vector.create $ do
+    let len = Vector.length dps
+    count <- newSTRef @Int 0
+    nv <- MVector.new len
+    let loop s | Vector.null s = MVector.slice 0 <$> (readSTRef count) <*> pure nv
+        loop s = do
+          let candidate = Vector.head s
+              (cs, rest) = Vector.span (\e -> e.time == candidate.time) s
+          count' <- readSTRef count
+          MVector.write nv count' (DataPoint candidate.time . f . Vector.map (.value) $ cs)
+          modifySTRef count succ
+          loop rest
+    loop dps

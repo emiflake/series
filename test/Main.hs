@@ -10,6 +10,7 @@ import PointwiseZipWith qualified
 import Resample qualified
 import Test.Tasty (adjustOption, defaultMain, testGroup)
 import Test.Tasty.QuickCheck (QuickCheckMaxSize (QuickCheckMaxSize), QuickCheckTests (QuickCheckTests))
+import qualified Nub
 
 main :: IO ()
 main = do
@@ -26,4 +27,5 @@ main = do
           , testGroup "Merge unit tests" Merge.unit
           , testGroup "Pointwise zip with properties tests" PointwiseZipWith.props
           , testGroup "Pointwise zip with unit tests" PointwiseZipWith.unit
+          , testGroup "Nub property tests" Nub.props
           ]

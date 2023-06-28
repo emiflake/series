@@ -6,7 +6,6 @@
 -}
 module Data.Series.Internal (binarySearch, linearSearch, SearchResult (..), inclusiveSlice, latest, Series (..), DataPoint (..), exact, isEmpty, emptySeries) where
 
-import Data.Maybe (fromJust)
 import Data.These (These (..), these)
 import Data.Time (UTCTime)
 import Data.Vector (Vector)
