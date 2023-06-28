@@ -11,9 +11,10 @@ import Data.Time (UTCTime)
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Prelude hiding (lookup)
+import Data.Kind (Type)
 
 -- | Represents a data point in a series. It has a time and a value.
-data DataPoint a = DataPoint
+data DataPoint (a :: Type) = DataPoint
   { time :: !UTCTime
   , value :: a
   }
@@ -22,12 +23,12 @@ data DataPoint a = DataPoint
 {- | A collection of data points. For any given time, we may or may not have a data point.
      The data points are sorted.
 -}
-newtype Series a = Series
+newtype Series (a :: Type) = Series
   { getSeries :: Vector (DataPoint a)
   }
   deriving stock (Functor, Show, Eq)
 
-binarySearch :: forall a. UTCTime -> Series a -> Maybe (SearchResult a)
+binarySearch :: forall (a :: Type). UTCTime -> Series a -> Maybe (SearchResult a)
 binarySearch _t (Series xs) | Vector.null xs = Nothing
 binarySearch t (Series xs) =
   Just $ go 0 (len - 1)
@@ -55,7 +56,7 @@ binarySearch t (Series xs) =
           GT -> go (min (len - 1) $ middle + 1) b
           LT -> go a (max 0 $ middle - 1)
 
-linearSearch :: forall a. UTCTime -> Series a -> Maybe (SearchResult a)
+linearSearch :: forall (a :: Type). UTCTime -> Series a -> Maybe (SearchResult a)
 linearSearch _t (Series xs) | Vector.null xs = Nothing
 linearSearch t (Series xs) =
   Just $ go (Vector.head xs) 0
@@ -70,17 +71,17 @@ linearSearch t (Series xs) =
     go _ i = go (xs Vector.! (i + 1)) (i + 1)
 
 -- | True if a 'Series' has any elements.
-isEmpty :: Series a -> Bool
+isEmpty :: forall (a :: Type). Series a -> Bool
 isEmpty (Series dps) = Vector.null dps
 
 -- | Series with no data points.
-emptySeries :: Series a
+emptySeries :: forall (a :: Type). Series a
 emptySeries = Series Vector.empty
 
 {- | Represents the result of performing binary search for a particular time in a 'Series'.
      This API is quite low-level and exposes index information into the Vector.
 -}
-data SearchResult a
+data SearchResult (a :: Type)
   = -- | An exact match is found, this is the index and the value.
     ExactMatch !Int !(DataPoint a)
   | -- | An exact match isn't found.
@@ -89,16 +90,16 @@ data SearchResult a
   deriving stock (Show, Eq)
 
 -- | Return whichever index and data point is either equal or less than the original search.
-exact :: SearchResult a -> Maybe (Int, DataPoint a)
+exact :: forall (a :: Type). SearchResult a -> Maybe (Int, DataPoint a)
 exact (ExactMatch i dp) = Just (i, dp)
 exact _ = Nothing
 
-latest :: SearchResult a -> Maybe (Int, DataPoint a)
+latest :: forall (a :: Type). SearchResult a -> Maybe (Int, DataPoint a)
 latest (ExactMatch i v) = Just (i, v)
 latest (Nearest t) = these Just (const Nothing) (const Just) t
 
 -- Fetch an index that is >= than the search.
-inclusiveIndexUB :: SearchResult a -> Maybe Int
+inclusiveIndexUB :: forall (a :: Type). SearchResult a -> Maybe Int
 inclusiveIndexUB (ExactMatch i _) = Just i
 inclusiveIndexUB (Nearest t) =
   case t of
@@ -107,7 +108,7 @@ inclusiveIndexUB (Nearest t) =
     That _ -> Nothing
 
 -- Fetch an index that is <= than the search.
-inclusiveIndexLB :: SearchResult a -> Maybe Int
+inclusiveIndexLB :: forall (a :: Type). SearchResult a -> Maybe Int
 inclusiveIndexLB (ExactMatch i _) = Just i
 inclusiveIndexLB (Nearest t) =
   case t of
@@ -118,7 +119,7 @@ inclusiveIndexLB (Nearest t) =
 {- | Create the bounds based on two search results, giving a new slice.
      If the slice contains no elements, return Nothing.
 -}
-inclusiveSlice :: SearchResult a -> SearchResult a -> Maybe (Int, Int)
+inclusiveSlice :: forall (a :: Type). SearchResult a -> SearchResult a -> Maybe (Int, Int)
 inclusiveSlice lb ub =
   case (inclusiveIndexLB lb, inclusiveIndexUB ub) of
     (Just i, Just j) -> Just (i, j)
