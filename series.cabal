@@ -1,7 +1,7 @@
 cabal-version:   3.4
 name:            series
 version:         0.1.0.0
-license:
+license:         Apache-2.0
 author:          Emily Martins
 maintainer:      emi@haskell.fyi
 build-type:      Simple
