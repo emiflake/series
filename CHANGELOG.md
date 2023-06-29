@@ -2,6 +2,13 @@
 
 This format is based on [Keep A Changelog](https://keepachangelog.com/en/1.0.0).
 
+## Unreleased (Candidate for 0.1.1.0)
+
+### Added
+
+- `Data.Series`:
+  - `head`: get the first `DataPoint` in the `Series`.
+
 ## 0.1.0.0 -- 2023-06-29
 
 ### Added

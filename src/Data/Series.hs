@@ -24,6 +24,7 @@ module Data.Series (
   nubWith,
   values,
   times,
+  Data.Series.head,
 ) where
 
 import Data.Foldable (for_)
@@ -272,3 +273,11 @@ nubWith f (Series dps) =
           modifySTRef count succ
           loop rest
     loop dps
+
+{- | /O(1)/. Get the first 'DataPoint' in the 'Series'. Error if the
+     'Series' is empty.
+
+     @since 0.1.1.0
+-}
+head :: forall (a :: Type). Series a -> DataPoint a
+head (Series s) = Vector.head s
