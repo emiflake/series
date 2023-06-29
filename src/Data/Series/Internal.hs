@@ -10,11 +10,13 @@ module Data.Series.Internal (
   emptySeries,
 ) where
 
+import Control.DeepSeq (NFData, NFData1)
 import Data.Kind (Type)
 import Data.These (These (..), these)
 import Data.Time (UTCTime)
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
+import GHC.Generics (Generic, Generic1)
 import Prelude hiding (lookup)
 
 {- | Represents a data point in a 'Series'. It has a time and a value.
@@ -32,7 +34,17 @@ data DataPoint (a :: Type) = DataPoint
       Show
     , -- | @since 0.1.0.0
       Eq
+    , -- | @since 0.1.0.0
+      Generic
+    , -- | @since 0.1.0.0
+      Generic1
     )
+
+-- | @since 0.1.0.0
+instance NFData a => NFData (DataPoint a)
+
+-- | @since 0.1.0.0
+instance NFData1 DataPoint
 
 {- | A collection of 'DataPoint's. For any given time, we may or may not have a data point.
      The data points are sorted by time.
@@ -49,7 +61,18 @@ newtype Series (a :: Type) = Series
       Show
     , -- | @since 0.1.0.0
       Eq
+    , -- | @since 0.1.0.0
+      Generic
+    , -- | @since 0.1.0.0
+      Generic1
     )
+  deriving newtype
+    ( -- | @since 0.1.0.0
+      NFData
+    )
+
+-- | @since  0.1.0.0
+instance NFData1 Series
 
 -- | /O(log n)/. Perform a binary search for a time in the given 'Series'.
 binarySearch ::

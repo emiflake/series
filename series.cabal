@@ -54,6 +54,7 @@ common shared
     , these
     , time
     , vector
+    , deepseq
 
 library
   import:          shared
@@ -73,6 +74,7 @@ common test-deps
     , tasty
     , tasty-hunit
     , tasty-quickcheck
+    , criterion
 
 common test-opts
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -O2
@@ -94,3 +96,16 @@ test-suite series-test
     Utils
 
   hs-source-dirs: src test
+
+
+benchmark series-bench
+  import:     shared, test-deps, test-opts
+  type:       exitcode-stdio-1.0
+  main-is:    Main.hs
+  other-modules:
+    Naive
+    Data.Series
+    Data.Series.TimeRange
+    Data.Series.Internal
+
+  hs-source-dirs: src bench

@@ -15,9 +15,28 @@ A `Series` is a _sequence_ of `DataPoint`s, each `DataPoint` contains the _time_
 
 ## Performance
 
-While there are as of yet no proper benchmarks in order to assess the performance of this library. The current implementation is backed by a `Vector`, and (ab)uses the `O(1)` slicing, and binary search in order to make operations more optimal than a naive implementation.
+The current implementation is backed by a `Vector`, and (ab)uses the `O(1)` slicing, and binary search in order to make operations more optimal than a naive implementation.
 
 As an example, slicing `Series` with a list leads to `O(n)` slice. With a Vector, and binary search, we get `O(log n)` slice.
+
+Here is a comparison of naive and vector-backed slicing:
+
+```
+benchmarking slice/series
+time                 271.5 ns   (270.1 ns .. 273.2 ns)
+                     1.000 R²   (1.000 R² .. 1.000 R²)
+mean                 272.5 ns   (271.5 ns .. 273.6 ns)
+std dev              3.600 ns   (2.779 ns .. 4.583 ns)
+variance introduced by outliers: 13% (moderately inflated)
+
+benchmarking slice/naive
+time                 1.119 ms   (1.113 ms .. 1.126 ms)
+                     0.999 R²   (0.999 R² .. 1.000 R²)
+mean                 1.106 ms   (1.102 ms .. 1.114 ms)
+std dev              21.08 μs   (16.63 μs .. 30.04 μs)
+```
+
+More benchmarks may follow.
 
 ## Prior work
 
