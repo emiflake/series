@@ -1,4 +1,16 @@
-module Data.Series.Continuous (Continuous (..), sample, (@), sampleAndHold) where
+{- |
+Module     : Data.Series.Continuous
+Maintainer : emi@haskell.fyi
+Description: Continuous time series.
+
+Continuous time series.
+-}
+module Data.Series.Continuous (
+  Continuous (..),
+  sample,
+  (@),
+  sampleAndHold,
+) where
 
 import Data.Series (DataPoint (..), Series)
 import Data.Series.Internal (binarySearch, latest)
@@ -15,7 +27,8 @@ newtype Continuous a = Continuous
 -- | Sample and hold values into a continuous function, providing a base value.
 sampleAndHold :: a -> Series a -> Continuous a
 sampleAndHold base s =
-  Continuous (\t -> maybe base (\(_, dp) -> dp.value) $ latest =<< binarySearch t s)
+  Continuous
+    (\t -> maybe base (\(_, dp) -> dp.value) $ latest =<< binarySearch t s)
 
 -- | Take a sample of a continuous time-value mapping.
 sample :: UTCTime -> Continuous a -> a

@@ -1,34 +1,62 @@
---------------------------------------------------------------------------------
--- Low level API that may or may not end up being exposed.
+module Data.Series.Internal (
+  binarySearch,
+  SearchResult (..),
+  inclusiveSlice,
+  latest,
+  Series (..),
+  DataPoint (..),
+  exact,
+  isEmpty,
+  emptySeries,
+) where
 
-{- | Perform binary search on a 'Series' for a time.
-     This is a low-level operation.
--}
-module Data.Series.Internal (binarySearch, linearSearch, SearchResult (..), inclusiveSlice, latest, Series (..), DataPoint (..), exact, isEmpty, emptySeries) where
-
+import Data.Kind (Type)
 import Data.These (These (..), these)
 import Data.Time (UTCTime)
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Prelude hiding (lookup)
-import Data.Kind (Type)
 
--- | Represents a data point in a series. It has a time and a value.
+{- | Represents a data point in a 'Series'. It has a time and a value.
+
+     @since 0.1.0.0
+-}
 data DataPoint (a :: Type) = DataPoint
   { time :: !UTCTime
   , value :: a
   }
-  deriving stock (Functor, Show, Eq)
+  deriving stock
+    ( -- | @since 0.1.0.0
+      Functor
+    , -- | @since 0.1.0.0
+      Show
+    , -- | @since 0.1.0.0
+      Eq
+    )
 
-{- | A collection of data points. For any given time, we may or may not have a data point.
-     The data points are sorted.
+{- | A collection of 'DataPoint's. For any given time, we may or may not have a data point.
+     The data points are sorted by time.
+
+     @since 0.1.0.0
 -}
 newtype Series (a :: Type) = Series
   { getSeries :: Vector (DataPoint a)
   }
-  deriving stock (Functor, Show, Eq)
+  deriving stock
+    ( -- | @since 0.1.0.0
+      Functor
+    , -- | @since 0.1.0.0
+      Show
+    , -- | @since 0.1.0.0
+      Eq
+    )
 
-binarySearch :: forall (a :: Type). UTCTime -> Series a -> Maybe (SearchResult a)
+-- | /O(log n)/. Perform a binary search for a time in the given 'Series'.
+binarySearch ::
+  forall (a :: Type).
+  UTCTime ->
+  Series a ->
+  Maybe (SearchResult a)
 binarySearch _t (Series xs) | Vector.null xs = Nothing
 binarySearch t (Series xs) =
   Just $ go 0 (len - 1)
@@ -39,8 +67,12 @@ binarySearch t (Series xs) =
     gather dp i | dp.time == t = Just $ ExactMatch i dp
     gather dp 0 | dp.time > t = Just $ Nearest (That (0, dp))
     gather dp i | i == len - 1, dp.time < t = Just $ Nearest (This (i, dp))
-    gather dp i | t < dp.time = Just $ Nearest (These (i - 1, xs Vector.! (i - 1)) (i, dp))
-    gather dp i | dp.time < t = Just $ Nearest (These (i, dp) (i + 1, xs Vector.! (i + 1)))
+    gather dp i
+      | t < dp.time =
+          Just $ Nearest (These (i - 1, xs Vector.! (i - 1)) (i, dp))
+    gather dp i
+      | dp.time < t =
+          Just $ Nearest (These (i, dp) (i + 1, xs Vector.! (i + 1)))
     gather _ _ = Nothing
 
     go :: Int -> Int -> SearchResult a
@@ -56,25 +88,17 @@ binarySearch t (Series xs) =
           GT -> go (min (len - 1) $ middle + 1) b
           LT -> go a (max 0 $ middle - 1)
 
-linearSearch :: forall (a :: Type). UTCTime -> Series a -> Maybe (SearchResult a)
-linearSearch _t (Series xs) | Vector.null xs = Nothing
-linearSearch t (Series xs) =
-  Just $ go (Vector.head xs) 0
-  where
-    len = Vector.length xs
+{- | Is true if a 'Series' does not have any elements.
 
-    go :: DataPoint a -> Int -> SearchResult a
-    go dp i | dp.time == t = ExactMatch i dp
-    go dp 0 | dp.time > t = Nearest (That (0, dp))
-    go dp i | dp.time > t = Nearest (These (i - 1, xs Vector.! (i - 1)) (i, dp))
-    go dp i | i == len - 1 = Nearest (This (i, dp))
-    go _ i = go (xs Vector.! (i + 1)) (i + 1)
-
--- | True if a 'Series' has any elements.
+     @since 0.1.0.0
+-}
 isEmpty :: forall (a :: Type). Series a -> Bool
 isEmpty (Series dps) = Vector.null dps
 
--- | Series with no data points.
+{- | Get a 'Series' with no data points.
+
+     @since 0.1.0.0
+-}
 emptySeries :: forall (a :: Type). Series a
 emptySeries = Series Vector.empty
 
@@ -119,7 +143,11 @@ inclusiveIndexLB (Nearest t) =
 {- | Create the bounds based on two search results, giving a new slice.
      If the slice contains no elements, return Nothing.
 -}
-inclusiveSlice :: forall (a :: Type). SearchResult a -> SearchResult a -> Maybe (Int, Int)
+inclusiveSlice ::
+  forall (a :: Type).
+  SearchResult a ->
+  SearchResult a ->
+  Maybe (Int, Int)
 inclusiveSlice lb ub =
   case (inclusiveIndexLB lb, inclusiveIndexUB ub) of
     (Just i, Just j) -> Just (i, j)

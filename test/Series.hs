@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 
-module Series (Series (Series)) where
+module Series (Series (Series), DataPoint (DataPoint)) where
 
 import Data.Series (DataPoint (DataPoint), series)
 import Data.Series.Internal (Series (Series))
