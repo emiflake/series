@@ -51,12 +51,7 @@ newtype Series (a :: Type) = Series
       Eq
     )
 
-{- | Perform a binary search for a time in the given 'Series'.
-
-     /O(log n)/.
-
-     @since 0.1.0.0
--}
+-- | /O(log n)/. Perform a binary search for a time in the given 'Series'.
 binarySearch ::
   forall (a :: Type).
   UTCTime ->

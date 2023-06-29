@@ -40,11 +40,7 @@ prop_nubWithDeclarative xs@(Series dps) =
       Vector.toList dps
         & List.groupBy ((==) `on` (.time))
         & fmap
-          ( ( \(DataPoint t v) ->
-                (t, v)
-            )
-              . List.maximumBy
-                ( comparing (.value)
-                )
+          ( (\(DataPoint t v) -> (t, v))
+              . List.maximumBy (comparing (.value))
           )
         & Series.series

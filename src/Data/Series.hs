@@ -68,9 +68,7 @@ size (Series dps) = Vector.length dps
 series :: forall (a :: Type). [(UTCTime, a)] -> Series a
 series = Series . Vector.fromList . sortOn (.time) . fmap (uncurry DataPoint)
 
-{- | Slice a series from one time to another. Inclusive.
-
-     /O(log n)/.
+{- | /O(log n)/. Slice a series from one time to another. Inclusive.
 
      @since 0.1.0.0
 -}
@@ -90,9 +88,7 @@ slice start end s@(Series dps) =
     sl = do
       a <- binarySearch start s; b <- binarySearch end s; inclusiveSlice a b
 
-{- | Find the value at a specific time.
-
-     /O(log n)/.
+{- | /O(log n)/. Find the value at a specific time.
 
      @since 0.1.0.0
 -}
@@ -108,9 +104,7 @@ lookup t s = fmap ((.value) . snd) $ exact =<< binarySearch t s
 (!?) :: forall (a :: Type). Series a -> UTCTime -> Maybe a
 (!?) = flip Data.Series.lookup
 
-{- | Compute the bounds of a 'Series'.
-
-     /O(1)/.
+{- | /O(1)/. Compute the bounds of a 'Series'.
 
      @since 0.1.0.0
 -}
@@ -118,9 +112,8 @@ bounds :: forall (a :: Type). Series a -> Maybe TimeRange
 bounds (Series s) | Vector.null s = Nothing
 bounds (Series s) = Just $ TimeRange (Vector.head s).time (Vector.last s).time
 
-{- | Find the last registered time in the given 'Series' before the given time.
-
-     /O(n)/.
+{- | /O(n)/. Find the last registered time in the given 'Series' before the
+     given time.
 -}
 findLastTimeBefore ::
   forall (a :: Type).
@@ -137,9 +130,7 @@ findLastTimeBefore t (Series xs) =
     lastMaybe xs' | Vector.null xs' = Nothing
     lastMaybe xs' = Just $ Vector.last xs'
 
-{- | Merge two 'Series', preserving temporal order.
-
-     /O(n+m)/.
+{- | /O(n+m)/. Merge two 'Series', preserving temporal order.
 
      @since 0.1.0.0
 -}
@@ -170,16 +161,14 @@ merge (Series dpsA) (Series dpsB) =
           pure ()
     pure nv
 
-{- | Create a new 'Series' with the times in the given 'Vector', at each of the
-     times in the 'Vector' place the last registered value in the given 'Series'
-     before that time.
+{- | /O(n*m)/. Create a new 'Series' with the times in the given 'Vector', at
+     each of the times in the 'Vector' place the last registered value in the
+     given 'Series' before that time.
 
      If a given time from the 'Vector' is before the first time in the 'Series',
      it's dropped.
 
      Passing an empty 'Vector' or 'Series' will always result in an empty 'Series'.
-
-     /O(n*m)/.
 
      @since 0.1.0.0
 -}
@@ -202,9 +191,8 @@ resampleSAH ts xs =
     ai <- readSTRef a
     pure $ MVector.slice 0 ai nv
 
-{- | Merge two 'Series', applying the latest value from each with the other.
-
-     /O(n*m)/.
+{- | /O(n*m)/. Merge two 'Series', applying the latest value from each with the
+     other.
 
      @since 0.1.0.0
 -}
@@ -230,34 +218,26 @@ pointwiseZipWith f sa sb =
     deconstr :: forall d. Series d -> Vector (DataPoint d)
     deconstr (Series s) = s
 
-{- | Extract the times 'Vector' from the 'Series'.
-
-     /O(n)/.
+{- | /O(n)/. Extract the times 'Vector' from the 'Series'.
 
      @since 0.1.0.0
 -}
 times :: forall (a :: Type). Series a -> Vector UTCTime
 times (Series s) = Vector.map (.time) s
 
-{- | Extract the values 'Vector' from the 'Series'.
-
-     /O(n)/.
+{- | /O(n)/. Extract the values 'Vector' from the 'Series'.
 
      @since 0.1.0.0
 -}
 values :: forall (a :: Type). Series a -> Vector a
 values (Series s) = Vector.map (.value) s
 
-{- | Add additional 'DataPoint's based on existing data in the 'Series'.
-
-     /O(n*m)/.
--}
+-- | /O(n*m)/. Add additional 'DataPoint's based on existing data in the 'Series'.
 applySAH :: forall (a :: Type). Vector UTCTime -> Series a -> Series a
 applySAH ts s = merge s $ resampleSAH ts s
 
-{- | Remove duplicates from a 'Series' without care for preserving some order of elements.
-
-     /O(n)/.
+{- | /O(n)/. Remove duplicates from a 'Series' without care for preserving some
+     order of elements.
 
      @since 0.1.0.0
 -}
@@ -268,9 +248,9 @@ nub (Series dps) =
       (\i dp -> maybe True ((dp.time /=) . (.time)) $ dps Vector.!? (i - 1))
       dps
 
-{- | Remove duplicates from a 'Series', exposing the choice for preserving element to the caller.
-
-     /O(n*f)/.
+{- | /O(n)*O(f)/ where f is the time complexity of the given criteria. Remove
+     duplicates from a 'Series', exposing the choice for preserving element
+     to the caller.
 
      @since 0.1.0.0
 -}
