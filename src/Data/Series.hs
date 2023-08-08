@@ -12,6 +12,7 @@ module Data.Series (
   series,
   Data.Series.lookup,
   (!?),
+  findLastTimeBefore,
   slice,
   size,
   singleton,
@@ -26,6 +27,7 @@ module Data.Series (
   times,
 ) where
 
+import Control.Monad ((<=<))
 import Data.Foldable (for_)
 import Data.Kind (Type)
 import Data.List (sortOn)
@@ -40,6 +42,7 @@ import Data.Series.Internal (
   exact,
   inclusiveSlice,
   isEmpty,
+  latest,
  )
 import Data.Series.TimeRange (TimeRange (TimeRange))
 import Data.Time (UTCTime)
@@ -112,7 +115,7 @@ bounds :: forall (a :: Type). Series a -> Maybe TimeRange
 bounds (Series s) | Vector.null s = Nothing
 bounds (Series s) = Just $ TimeRange (Vector.head s).time (Vector.last s).time
 
-{- | /O(n)/. Find the last registered time in the given 'Series' before the
+{- | /O(log n)/. Find the last registered time in the given 'Series' before the
      given time.
 -}
 findLastTimeBefore ::
@@ -120,15 +123,8 @@ findLastTimeBefore ::
   UTCTime ->
   Series a ->
   Maybe (DataPoint a)
-findLastTimeBefore t (Series xs) =
-  lastMaybe $
-    Vector.filter
-      (\(DataPoint t0 _) -> t0 <= t)
-      xs
-  where
-    lastMaybe :: forall (b :: Type). Vector b -> Maybe b
-    lastMaybe xs' | Vector.null xs' = Nothing
-    lastMaybe xs' = Just $ Vector.last xs'
+findLastTimeBefore t =
+  maybe Nothing (Just . snd) . latest <=< binarySearch t
 
 {- | /O(n+m)/. Merge two 'Series', preserving temporal order.
 

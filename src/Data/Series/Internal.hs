@@ -12,12 +12,13 @@ module Data.Series.Internal (
 
 import Control.DeepSeq (NFData, NFData1)
 import Data.Kind (Type)
-import Data.These (These (..), these)
+import Data.These (These (..))
 import Data.Time (UTCTime)
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import GHC.Generics (Generic, Generic1)
 import Prelude hiding (lookup)
+import Data.These.Combinators (justHere)
 
 {- | Represents a data point in a 'Series'. It has a time and a value.
 
@@ -143,7 +144,7 @@ exact _ = Nothing
 
 latest :: forall (a :: Type). SearchResult a -> Maybe (Int, DataPoint a)
 latest (ExactMatch i v) = Just (i, v)
-latest (Nearest t) = these Just (const Nothing) (const Just) t
+latest (Nearest t) = justHere t
 
 -- Fetch an index that is >= than the search.
 inclusiveIndexUB :: forall (a :: Type). SearchResult a -> Maybe Int

@@ -2,6 +2,20 @@
 
 This format is based on [Keep A Changelog](https://keepachangelog.com/en/1.0.0).
 
+## 0.1.1.0 -- 2023-08-09
+
+### Added
+
+- `Data.Series.Continuous`:
+  - Expose module
+- `Data.Series`:
+  - Expose `findLastTimeBefore`
+  
+### Changed
+
+- `Data.Series`:
+  - Fix `latest` internal function which would have caused a bug previously.
+
 ## 0.1.0.0 -- 2023-06-29
 
 ### Added
